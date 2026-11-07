@@ -1,0 +1,85 @@
+<Window x:Class="JyutPingPopup.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="粤语拼音弹窗"
+        Width="360"
+        MinHeight="220"
+        SizeToContent="Height"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen"
+        ShowInTaskbar="True">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+            <Image Source="pack://application:,,,/assets/logo.ico" Width="44" Height="44"/>
+            <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
+                <TextBlock Text="粤语拼音弹窗" FontSize="16" FontWeight="Bold"/>
+                <TextBlock x:Name="StatusText" Text="运行中 · 划选汉字松手即弹粤拼" FontSize="12" Foreground="#666666" Margin="0,4,0,0"/>
+            </StackPanel>
+        </StackPanel>
+
+        <Border Grid.Row="1" Margin="0,12,0,0" Padding="12" Background="#F5F5F5" CornerRadius="8">
+            <StackPanel>
+                <TextBlock Text="全局关闭" FontSize="12" Foreground="#888888"/>
+                <Button x:Name="OffBtn" Content="全局关闭" Height="32" Margin="0,6,0,4" Click="OffBtn_Click"/>
+                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                    <TextBlock Text="快捷键：" FontSize="12" Foreground="#555555" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="QuitHotkeyText" Text="Ctrl + Shift + Q" FontSize="12" FontWeight="Bold" VerticalAlignment="Center" Margin="4,0,8,0"/>
+                    <Button x:Name="QuitCustomBtn" Content="自定义" Width="72" Height="26" Click="QuitCustomBtn_Click"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="2" Margin="0,10,0,0" Padding="12" Background="#F5F5F5" CornerRadius="8">
+            <StackPanel>
+                <TextBlock Text="暂停捕获" FontSize="12" Foreground="#888888"/>
+                <Button x:Name="PauseBtn" Content="暂停捕获" Height="32" Margin="0,6,0,4" Click="PauseBtn_Click"/>
+                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                    <TextBlock Text="快捷键：" FontSize="12" Foreground="#555555" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="PauseHotkeyText" Text="Ctrl + Shift + P" FontSize="12" FontWeight="Bold" VerticalAlignment="Center" Margin="4,0,8,0"/>
+                    <Button x:Name="PauseCustomBtn" Content="自定义" Width="72" Height="26" Click="PauseCustomBtn_Click"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="3" Margin="0,10,0,0" Padding="12" Background="#F5F5F5" CornerRadius="8">
+            <StackPanel>
+                <TextBlock Text="截图识字" FontSize="12" Foreground="#888888"/>
+                <Button x:Name="OcrBtn" Content="截图识字" Height="32" Margin="0,6,0,4" Click="OcrBtn_Click"/>
+                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                    <TextBlock Text="快捷键：" FontSize="12" Foreground="#555555" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="OcrHotkeyText" Text="Ctrl + Shift + L" FontSize="12" FontWeight="Bold" VerticalAlignment="Center" Margin="4,0,8,0"/>
+                    <Button x:Name="OcrCustomBtn" Content="自定义" Width="72" Height="26" Click="OcrCustomBtn_Click"/>
+                </StackPanel>
+                <TextBlock Margin="0,6,0,0" TextWrapping="Wrap" FontSize="11" Foreground="#888888"
+                           Text="某些地方无法高亮（图片、视频、游戏、扫描版 PDF），用截图识别里面的中文。"/>
+            </StackPanel>
+        </Border>
+
+        <StackPanel Grid.Row="4" Margin="0,12,0,0" VerticalAlignment="Top">
+            <CheckBox x:Name="ResidentBox" Content="常驻后台（关窗口最小化到托盘，不退出）"
+                      Checked="ResidentBox_Changed" Unchecked="ResidentBox_Changed"/>
+            <CheckBox x:Name="AutoStartBox" Content="开机自动启动"
+                      Margin="0,10,0,0"
+                      Checked="AutoStartBox_Changed" Unchecked="AutoStartBox_Changed"/>
+            <CheckBox x:Name="ClipFallbackBox" Content="读不到时借剪贴板兜底（取消勾选则完全不碰剪贴板）"
+                      Margin="0,10,0,0"
+                      Checked="ClipFallbackBox_Changed" Unchecked="ClipFallbackBox_Changed"/>
+            <TextBlock Margin="0,10,0,0" TextWrapping="Wrap" FontSize="11" Foreground="#888888"
+                       Text="点「自定义」后按下新组合键即可重绑；也可只按 Ctrl / Shift / Alt 单独成键（仅在该键被孤立敲击时触发，不与 Ctrl+C 等组合冲突）；按 Esc 取消。"/>
+            <Button x:Name="RestoreBtn" Content="恢复默认热键" HorizontalAlignment="Left" Width="120" Height="28" Margin="0,8,0,0" Click="RestoreBtn_Click"/>
+        </StackPanel>
+
+        <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,8,0,0">
+            <Button x:Name="HideBtn" Content="隐藏" Width="72" Height="28" Margin="0,0,8,0" Click="HideBtn_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>
