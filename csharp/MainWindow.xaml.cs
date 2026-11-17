@@ -12,6 +12,8 @@ public partial class MainWindow : Window
     private const string AppKey = @"Software\JyutPingPopup";
     private const string ResidentValue = "Resident";
     private const string ClipFallbackValue = "ClipFallback";
+    private const string VoiceSettingsUri = "ms-settings:regionlanguage";
+    private const string VoiceHelpUrl = "https://support.microsoft.com/zh-cn/windows/hardware/input-devices/manage-the-language-and-keyboard-input-layout-settings-in-windows";
 
     private bool _forceExit;     // 由「全局关闭」/托盘退出/Ctrl+Shift+Q 置位，允许真正退出
     private bool _suppress;      // 回读时防止 Checked/Unchecked 事件递归
@@ -37,10 +39,16 @@ public partial class MainWindow : Window
         ClipFallbackBox.IsChecked = GetClipFallback();
         CaptureService.AllowClipFallback = GetClipFallback();   // 启动时同步给取词服务
         var speakOn = SpeechSettings.GetEnabled();
+        _suppress = true;
         SpeakBox.IsChecked = speakOn;
-        SpeakVoiceRow.IsEnabled = speakOn;
+        var hasVoice = SpeechService.HasVoice;                 // 没装粤语语音包就置灰开关、亮出安装提示
+        SpeakBox.IsEnabled = hasVoice;
+        SpeakBox.ToolTip = hasVoice ? null : "未检测到粤语语音包，点下方链接安装";
+        SpeakVoiceRow.IsEnabled = hasVoice && speakOn;
+        SpeakNoVoiceHint.Visibility = hasVoice ? Visibility.Collapsed : Visibility.Visible;
         if (SpeechSettings.GetPreferFemale()) VoiceFemale.IsChecked = true;
         else VoiceMale.IsChecked = true;
+        _suppress = false;
         Closing += MainWindow_Closing;
     }
 
@@ -206,8 +214,24 @@ public partial class MainWindow : Window
         if (_suppress) return;
         _suppress = true;
         SpeechSettings.SetEnabled(SpeakBox.IsChecked == true);
-        SpeakVoiceRow.IsEnabled = SpeakBox.IsChecked == true;
+        SpeakVoiceRow.IsEnabled = SpeakBox.IsChecked == true && SpeechService.HasVoice;
         _suppress = false;
+    }
+
+    // 点「安装语音包」：优先开系统语言设置页，失败则退回微软说明网页
+    private void InstallVoice_Click(object sender, RoutedEventArgs e)
+    {
+        if (!TryOpen(VoiceSettingsUri)) TryOpen(VoiceHelpUrl);
+    }
+
+    private static bool TryOpen(string target)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo(target) { UseShellExecute = true });
+            return true;
+        }
+        catch { return false; }
     }
 
     private void Voice_Changed(object sender, RoutedEventArgs e)
@@ -231,4 +255,10 @@ public partial class MainWindow : Window
     }
 
     private void HideBtn_Click(object sender, RoutedEventArgs e) => Hide();
+
+    // 自测观察口：验证无语音时开关置灰、安装提示显隐、跳转目标
+    internal bool SpeakBoxEnabledForTest => SpeakBox.IsEnabled;
+    internal Visibility NoVoiceHintForTest => SpeakNoVoiceHint.Visibility;
+    internal bool VoiceRowEnabledForTest => SpeakVoiceRow.IsEnabled;
+    internal string VoiceSettingsUriForTest => VoiceSettingsUri;
 }

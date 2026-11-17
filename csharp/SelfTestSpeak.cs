@@ -96,6 +96,33 @@ public static class SelfTestSpeak
             popup.Render(items, "");
             Check("btn_hidden_when_off", popup.SpeakBtnVisibilityForTest.ToString(), "Collapsed");
 
+            // 4. 设置界面：无语音包时开关置灰 + 安装提示，有语音时恢复
+            SpeechSettings.SetEnabled(true);
+            SpeechService.SetVoicesForTest(System.Array.Empty<CantoneseVoice>());
+            var mwNoVoice = new MainWindow();
+            Check("speak_box_disabled_no_voice", mwNoVoice.SpeakBoxEnabledForTest ? "true" : "false", "false");
+            Check("no_voice_hint_visible", mwNoVoice.NoVoiceHintForTest.ToString(), "Visible");
+            Check("voice_row_disabled_no_voice", mwNoVoice.VoiceRowEnabledForTest ? "true" : "false", "false");
+            Check("install_uri", mwNoVoice.VoiceSettingsUriForTest, "ms-settings:regionlanguage");
+
+            // 截图留证：无语音时设置界面的置灰开关 + 安装提示条
+            mwNoVoice.Show();
+            mwNoVoice.UpdateLayout();
+            var mwShot = new System.Windows.Media.Imaging.RenderTargetBitmap(
+                (int)System.Math.Ceiling(mwNoVoice.ActualWidth), (int)System.Math.Ceiling(mwNoVoice.ActualHeight),
+                96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+            mwShot.Render(mwNoVoice);
+            var mwEnc = new System.Windows.Media.Imaging.PngBitmapEncoder();
+            mwEnc.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(mwShot));
+            using (var mwFs = File.Create(Path.Combine(dir, "selftest_speak_settings.png"))) mwEnc.Save(mwFs);
+            mwNoVoice.Hide();
+
+            SpeechService.SetVoicesForTest(new[] { new CantoneseVoice("Microsoft Tracy Desktop", true) });
+            var mwVoice = new MainWindow();
+            Check("speak_box_enabled_with_voice", mwVoice.SpeakBoxEnabledForTest ? "true" : "false", "true");
+            Check("no_voice_hint_collapsed", mwVoice.NoVoiceHintForTest.ToString(), "Collapsed");
+            Check("voice_row_enabled_with_voice", mwVoice.VoiceRowEnabledForTest ? "true" : "false", "true");
+
             SpeechSettings.SetEnabled(wasEnabled);
             SpeechSettings.SetPreferFemale(wasFemale);
             SpeechService.ResetForTest();

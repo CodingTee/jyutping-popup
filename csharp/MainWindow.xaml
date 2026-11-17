@@ -83,8 +83,17 @@
                 <RadioButton x:Name="VoiceMale" Content="男声 Danny" GroupName="SpeakVoice"
                              FontSize="12" Margin="14,0,0,0" Checked="Voice_Changed"/>
             </StackPanel>
-            <TextBlock Margin="20,4,0,0" TextWrapping="Wrap" FontSize="11" Foreground="#888888"
-                       Text="需本机安装粤语语音（Windows 设置 → 时间和语言 → 中文繁体香港 → 文字转换语音）；没装则按钮不显示。"/>
+            <Border x:Name="SpeakNoVoiceHint" Margin="20,6,0,0" Padding="8" Background="#FFF4E6" CornerRadius="4" Visibility="Collapsed">
+                <StackPanel>
+                    <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="#8A5A00"
+                               Text="未检测到粤语语音包，朗读按钮不会显示。"/>
+                    <TextBlock Margin="0,4,0,0" FontSize="11" TextWrapping="Wrap">
+                        <Hyperlink Click="InstallVoice_Click" Foreground="#0066CC">点此打开系统设置安装语音包</Hyperlink>
+                    </TextBlock>
+                    <TextBlock Margin="0,4,0,0" TextWrapping="Wrap" FontSize="11" Foreground="#8A5A00"
+                               Text="或手动：设置 → 时间和语言 → 语言和区域 → 添加语言 → 中文（繁体，香港）→ 勾选「文字转换语音」→ 装完重启本软件。"/>
+                </StackPanel>
+            </Border>
             <TextBlock Margin="0,10,0,0" TextWrapping="Wrap" FontSize="11" Foreground="#888888"
                        Text="点「自定义」后按下新组合键即可重绑；也可只按 Ctrl / Shift / Alt 单独成键（仅在该键被孤立敲击时触发，不与 Ctrl+C 等组合冲突）；按 Esc 取消。"/>
             <Button x:Name="RestoreBtn" Content="恢复默认热键" HorizontalAlignment="Left" Width="120" Height="28" Margin="0,8,0,0" Click="RestoreBtn_Click"/>

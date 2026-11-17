@@ -64,11 +64,11 @@ The demo GIFs come from `assets/Video/make_gif.bat`. Drag a local recording onto
 
 - Windows 10 / 11（系统版本 22621 或更高，OCR 需要此版本以上的 WinRT 接口）
 - .NET 9 运行时（若用自包含发布则不需要）
-- 可选的粤语语音包：仅发音功能需要。到「设置 → 时间和语言 → 语言和区域 → 添加语言 → 中文（繁体，香港）」，在语言选项里勾选「文字转换语音」，装完重启软件。语音属 Windows 组件，不随本软件分发；没装则发音按钮不显示，其余功能不受影响。
+- 可选的粤语语音包：仅发音功能需要。设置界面的发音开关在无语音包时会置灰，并显示「点此打开系统设置安装语音包」链接，一键跳到语言和区域页。也可手动：设置 → 时间和语言 → 语言和区域 → 添加语言 → 中文（繁体，香港），在语言选项里勾选「文字转换语音」，装完重启软件。语音属 Windows 组件，不随本软件分发；没装则发音按钮不显示，其余功能不受影响。
 
 - Windows 10 / 11 (OS build 22621 or later, required by the WinRT OCR APIs)
 - .NET 9 runtime (not needed for a self contained publish)
-- Optional Cantonese voice pack: needed only for pronunciation. Go to Settings → Time & language → Language & region → Add a language → Chinese (Traditional, Hong Kong), then check "Text to speech" in the language options and restart the app. Voices are a Windows component and are not bundled with this app; without one the pronunciation button stays hidden and everything else works.
+- Optional Cantonese voice pack: needed only for pronunciation. When no voice is installed, the pronunciation toggle in settings is disabled and shows a link that opens the system language and region page in one click. Or go manually to Settings → Time & language → Language & region → Add a language → Chinese (Traditional, Hong Kong), check "Text to speech" in the language options, then restart the app. Voices are a Windows component and are not bundled with this app; without one the pronunciation button stays hidden and everything else works.
 
 ### 安装 / Install
 
