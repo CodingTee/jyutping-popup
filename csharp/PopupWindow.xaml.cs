@@ -12,6 +12,9 @@ public partial class PopupWindow : Window
 {
     private string _speakText = "";      // 本次要朗读的原文汉字（非粤拼）
     private bool _speakBtnVisible;       // 发音按钮当前是否可见，供点击命中判断用
+    // 发音按钮的物理像素矩形，在 UI 线程 ShowAt 时算好。
+    // 全局钩子在独立线程调用 IsOnSpeakButton，绝不能在那里碰 WPF 视觉树（会抛跨线程异常并卡住钩子）。
+    private double _speakBtnPxX, _speakBtnPxY, _speakBtnPxW, _speakBtnPxH;
 
     public PopupWindow()
     {
@@ -76,19 +79,15 @@ public partial class PopupWindow : Window
     private void SpeakBtn_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         e.Handled = true; // 吃掉这次按下，不让全局左键逻辑把它当成划词
-        SpeechService.Speak(_speakText, SpeechSettings.GetPreferFemale());
+        SpeechService.Speak(_speakText);   // 自动用本机已有的粤语语音
     }
 
-    /// <summary>物理像素坐标是否落在发音按钮矩形内。全局钩子用它判断「这一下是不是点在按钮上」。</summary>
+    /// <summary>物理像素坐标是否落在发音按钮矩形内。全局钩子线程调用，只做整数比较，不碰视觉树。</summary>
     public bool IsOnSpeakButton(int pixelX, int pixelY)
     {
-        if (!_speakBtnVisible || SpeakBtn.Visibility != Visibility.Visible) return false;
-        var transform = PresentationSource.FromVisual(this)?.CompositionTarget?.TransformFromDevice
-                        ?? Matrix.Identity;
-        var pt = transform.Transform(new System.Windows.Point(pixelX, pixelY));
-        var tl = SpeakBtn.PointToScreen(new System.Windows.Point(0, 0));
-        var rect = new System.Windows.Rect(tl.X, tl.Y, SpeakBtn.ActualWidth, SpeakBtn.ActualHeight);
-        return rect.Contains(pt);
+        if (!_speakBtnVisible) return false;
+        return pixelX >= _speakBtnPxX && pixelX <= _speakBtnPxX + _speakBtnPxW
+            && pixelY >= _speakBtnPxY && pixelY <= _speakBtnPxY + _speakBtnPxH;
     }
 
     // 自测观察口
@@ -103,6 +102,15 @@ public partial class PopupWindow : Window
         SpeakBtn.TranslatePoint(new System.Windows.Point(SpeakBtn.ActualWidth / 2, SpeakBtn.ActualHeight / 2), this);
     internal System.Windows.Point CardSafePointForTest() =>
         Card.TranslatePoint(new System.Windows.Point(8, 8), this);
+    // 按钮中心的物理屏幕坐标，用于验证钩子线程的命中判断（与缓存矩形同一坐标系）
+    internal System.Windows.Point SpeakBtnScreenPointForTest()
+    {
+        var toDevice = PresentationSource.FromVisual(this)?.CompositionTarget?.TransformToDevice
+                       ?? Matrix.Identity;
+        var btnDip = SpeakBtn.TranslatePoint(
+            new System.Windows.Point(SpeakBtn.ActualWidth / 2, SpeakBtn.ActualHeight / 2), this);
+        return toDevice.Transform(new System.Windows.Point(Left + btnDip.X, Top + btnDip.Y));
+    }
     internal string MeasureProbe()
     {
         var border = Card;
@@ -139,6 +147,23 @@ public partial class PopupWindow : Window
         if (top + ActualHeight > area.Bottom) top = Math.Max(area.Top, area.Bottom - ActualHeight);
         Left = Math.Max(area.Left, left);
         Top = Math.Max(area.Top, top);
+
+        // 缓存发音按钮的物理像素矩形：钩子线程只做整数比较，绝不在这里之外碰视觉树。
+        // 先算按钮相对窗口的 DIP 位置 + 窗口 Left/Top 得屏幕 DIP，再经 TransformToDevice 转物理像素。
+        // 不用 PointToScreen：它在未连接 PresentationSource 的场合会抛异常。
+        if (_speakBtnVisible)
+        {
+            var toDevice = PresentationSource.FromVisual(this)?.CompositionTarget?.TransformToDevice
+                           ?? Matrix.Identity;
+            var btnDip = SpeakBtn.TranslatePoint(new System.Windows.Point(0, 0), this);
+            var screenDip = new System.Windows.Point(Left + btnDip.X, Top + btnDip.Y);
+            var px = toDevice.Transform(screenDip);
+            var sizePx = toDevice.Transform(new System.Windows.Point(SpeakBtn.ActualWidth, SpeakBtn.ActualHeight));
+            _speakBtnPxX = px.X;
+            _speakBtnPxY = px.Y;
+            _speakBtnPxW = sizePx.X;
+            _speakBtnPxH = sizePx.Y;
+        }
 
         Visibility = Visibility.Visible;
     }

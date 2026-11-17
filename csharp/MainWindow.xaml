@@ -86,14 +86,6 @@
                 </StackPanel>
             </Grid>
 
-            <StackPanel x:Name="SpeakVoiceRow" Orientation="Horizontal" Margin="18,7,0,0" IsEnabled="False">
-                <TextBlock Text="声音：" FontSize="12" Foreground="#555555" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                <RadioButton x:Name="VoiceFemale" Content="女声 Tracy" GroupName="SpeakVoice"
-                             FontSize="12" IsChecked="True" Checked="Voice_Changed"/>
-                <RadioButton x:Name="VoiceMale" Content="男声 Danny" GroupName="SpeakVoice"
-                             FontSize="12" Margin="14,0,0,0" Checked="Voice_Changed"/>
-            </StackPanel>
-
             <Border x:Name="SpeakNoVoiceHint" Margin="18,6,0,0" Padding="8" Background="#FFF4E6" CornerRadius="4" Visibility="Collapsed">
                 <StackPanel>
                     <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="#8A5A00"

@@ -44,10 +44,7 @@ public partial class MainWindow : Window
         var hasVoice = SpeechService.HasVoice;                 // 没装粤语语音包就置灰开关、亮出安装提示
         SpeakBox.IsEnabled = hasVoice;
         SpeakBox.ToolTip = hasVoice ? null : "未检测到粤语语音包，点下方链接安装";
-        SpeakVoiceRow.IsEnabled = hasVoice && speakOn;
         SpeakNoVoiceHint.Visibility = hasVoice ? Visibility.Collapsed : Visibility.Visible;
-        if (SpeechSettings.GetPreferFemale()) VoiceFemale.IsChecked = true;
-        else VoiceMale.IsChecked = true;
         _suppress = false;
         Closing += MainWindow_Closing;
     }
@@ -214,7 +211,6 @@ public partial class MainWindow : Window
         if (_suppress) return;
         _suppress = true;
         SpeechSettings.SetEnabled(SpeakBox.IsChecked == true);
-        SpeakVoiceRow.IsEnabled = SpeakBox.IsChecked == true && SpeechService.HasVoice;
         _suppress = false;
     }
 
@@ -232,12 +228,6 @@ public partial class MainWindow : Window
             return true;
         }
         catch { return false; }
-    }
-
-    private void Voice_Changed(object sender, RoutedEventArgs e)
-    {
-        if (_suppress) return;
-        SpeechSettings.SetPreferFemale(VoiceFemale.IsChecked == true);
     }
 
     private void OffBtn_Click(object sender, RoutedEventArgs e) => RequestExit();
@@ -259,6 +249,5 @@ public partial class MainWindow : Window
     // 自测观察口：验证无语音时开关置灰、安装提示显隐、跳转目标
     internal bool SpeakBoxEnabledForTest => SpeakBox.IsEnabled;
     internal Visibility NoVoiceHintForTest => SpeakNoVoiceHint.Visibility;
-    internal bool VoiceRowEnabledForTest => SpeakVoiceRow.IsEnabled;
     internal string VoiceSettingsUriForTest => VoiceSettingsUri;
 }

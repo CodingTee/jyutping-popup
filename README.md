@@ -45,7 +45,7 @@ The demo GIFs come from `assets/Video/make_gif.bat`. Drag a local recording onto
 - **自定义热键**：三个热键均可改，也可一键恢复默认：退出 `Ctrl + Shift + Q`、暂停 `Ctrl + Shift + P`、截图识字 `Ctrl + Shift + L`。
 - **多音字与词优先**：先按词查表（如「重量」读 `cung5 loeng6`），查不到再回退到单字，避免把词劈开读错。
 - **简繁转换**：注音前自动把简体转成香港繁体，字形与粤拼表一致。
-- **发音（可选，默认关闭）**：在设置里开启后，卡片右下角出现「朗读」按钮，点一下即用本机粤语语音（Tracy 女声 / Danny 男声）念出选中的字；按钮不拦截鼠标，卡片其余区域照常穿透。未安装粤语语音时按钮自动隐藏，不影响其它功能，全程离线。
+- **发音（可选，默认关闭）**：在设置里开启后，卡片右下角出现「朗读」按钮，点一下即用本机已有的粤语语音念出选中的字（自动选用，无需挑男女声）；按钮不拦截鼠标，卡片其余区域照常穿透。未安装粤语语音时按钮自动隐藏，不影响其它功能，全程离线。
 - **单实例**：重复启动只会唤醒已运行的实例，不会开多个。
 - **托盘常驻**：右键托盘图标可显示主界面、暂停/继续捕获、截图识字或退出；可设开机自启。
 
@@ -54,7 +54,7 @@ The demo GIFs come from `assets/Video/make_gif.bat`. Drag a local recording onto
 - **Customizable hotkeys:** All three hotkeys can be changed or reset to defaults: quit `Ctrl + Shift + Q`, pause `Ctrl + Shift + P`, screenshot OCR `Ctrl + Shift + L`.
 - **Words before characters:** Multi-character words are looked up first (for example 「重量」 reads `cung5 loeng6`), falling back to single characters only when needed, so words are not split incorrectly.
 - **Simplified to Traditional:** Text is converted to Hong Kong Traditional before annotation, matching the shapes in the Jyutping tables.
-- **Pronunciation (optional, off by default):** Enable it in settings and a "朗读" button appears on the card. Click to read the selected text aloud with a local Cantonese voice (Tracy female / Danny male). The button does not block mouse clicks and the rest of the card stays click-through. With no Cantonese voice installed the button hides itself and everything else keeps working. Fully offline.
+- **Pronunciation (optional, off by default):** Enable it in settings and a "朗读" button appears on the card. Click to read the selected text aloud with the first local Cantonese voice available (chosen automatically, no voice selection needed). The button does not block mouse clicks and the rest of the card stays click-through. With no Cantonese voice installed the button hides itself and everything else keeps working. Fully offline.
 - **Single instance:** Launching again only wakes the running instance instead of opening another.
 - **System tray:** Right click the tray icon to show the main window, pause or resume capture, trigger screenshot OCR, or quit. Optional launch on startup.
 
@@ -145,7 +145,7 @@ JyutPingPopup.exe --selftest-ui         # 卡片渲染
 JyutPingPopup.exe --selftest-ocr        # 离线 OCR 识别
 JyutPingPopup.exe --selftest-region     # 截图遮罩渲染与坐标
 JyutPingPopup.exe --selftest-ocrpanel   # OCR 结果面板渲染
-JyutPingPopup.exe --selftest-speak      # 发音：选声/开关/按钮显隐/命中穿透
+JyutPingPopup.exe --selftest-speak      # 发音：自动选声/开关/按钮显隐/钩子线程安全命中
 ```
 
 The repo ships several command line self tests covering annotation, clipboard fallback, image clipboard lock timing, card layout, OCR, the screenshot overlay, the result panel, and pronunciation (including hit-test click-through). `--selftest-region`, `--selftest-ocrpanel`, and `--selftest-speak` briefly open real windows; the rest are pure command line:
@@ -160,7 +160,7 @@ JyutPingPopup.exe --selftest-ui         # card rendering
 JyutPingPopup.exe --selftest-ocr        # offline OCR recognition
 JyutPingPopup.exe --selftest-region     # screenshot overlay rendering and coordinates
 JyutPingPopup.exe --selftest-ocrpanel   # OCR result panel rendering
-JyutPingPopup.exe --selftest-speak      # pronunciation: voice pick, toggle, button visibility, hit test
+JyutPingPopup.exe --selftest-speak      # pronunciation: auto voice pick, toggle, button visibility, hook-safe hit test
 ```
 
 ## 文件结构 / Project layout

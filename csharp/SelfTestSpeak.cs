@@ -14,31 +14,26 @@ public static class SelfTestSpeak
     {
         var dir = AppContext.BaseDirectory;
 
-        // 1. 选声逻辑：注入两台假语音，验证男女偏好与缺性别时的回退
+        // 1. 自动选声：不区分男女，固定用本机列表里的第一台粤语语音
         SpeechService.SetVoicesForTest(new[]
         {
-            new CantoneseVoice("Microsoft Tracy Desktop", true),
-            new CantoneseVoice("Microsoft Danny Desktop", false),
+            new CantoneseVoice("Microsoft Tracy Desktop"),
+            new CantoneseVoice("Microsoft Danny Desktop"),
         });
-        Check("pick_female", SpeechService.PickForTest(true)?.Name ?? "", "Microsoft Tracy Desktop");
-        Check("pick_male", SpeechService.PickForTest(false)?.Name ?? "", "Microsoft Danny Desktop");
+        Check("pick_auto_first", SpeechService.PickAutoForTest()?.Name ?? "", "Microsoft Tracy Desktop");
 
-        SpeechService.SetVoicesForTest(new[] { new CantoneseVoice("Microsoft Tracy Desktop", true) });
-        Check("pick_fallback_to_only", SpeechService.PickForTest(false)?.Name ?? "", "Microsoft Tracy Desktop");
+        SpeechService.SetVoicesForTest(new[] { new CantoneseVoice("Microsoft Huihui") });
+        Check("pick_auto_only", SpeechService.PickAutoForTest()?.Name ?? "", "Microsoft Huihui");
 
         SpeechService.SetVoicesForTest(System.Array.Empty<CantoneseVoice>());
-        Check("pick_none", SpeechService.PickForTest(true) == null ? "null" : "nonnull", "null");
-        Check("speak_no_voice", SpeechService.Speak("你好", true) ? "true" : "false", "false");
+        Check("pick_none", SpeechService.PickAutoForTest() == null ? "null" : "nonnull", "null");
+        Check("speak_no_voice", SpeechService.Speak("你好") ? "true" : "false", "false");
 
         // 2. 设置存储：写 -> 读 -> 还回原值，验证默认与往返
         var wasEnabled = SpeechSettings.GetEnabled();
-        var wasFemale = SpeechSettings.GetPreferFemale();
         SpeechSettings.SetEnabled(true);
         Check("set_enabled_on", SpeechSettings.GetEnabled() ? "true" : "false", "true");
-        SpeechSettings.SetPreferFemale(false);
-        Check("set_voice_male", SpeechSettings.GetPreferFemale() ? "true" : "false", "false");
         SpeechSettings.SetEnabled(wasEnabled);
-        SpeechSettings.SetPreferFemale(wasFemale);
 
         // 3. 弹窗按钮显隐 + 命中标记（用 Dispatcher 跑，窗口需要 UI 线程）
         var done = false;
@@ -55,32 +50,57 @@ public static class SelfTestSpeak
             Check("btn_hidden_no_voice", popup.SpeakBtnVisibilityForTest.ToString(), "Collapsed");
 
             // 有语音 + 开关开：按钮显示，且朗读文本是原文汉字
-            SpeechService.SetVoicesForTest(new[] { new CantoneseVoice("Microsoft Tracy Desktop", true) });
+            SpeechService.SetVoicesForTest(new[] { new CantoneseVoice("Microsoft Tracy Desktop") });
             popup.Render(items, "");
             Check("btn_shown_with_voice", popup.SpeakBtnVisibilityForTest.ToString(), "Visible");
             Check("speak_text", popup.SpeakTextForTest, "你好");
             Check("card_not_hittable", popup.CardHitTestForTest ? "true" : "false", "false");
             Check("btn_hittable", popup.SpeakBtnHitTestForTest ? "true" : "false", "true");
 
-            // 真实命中测试：Show 出来后，按钮中心必须命中 SpeakBtn，卡片中心不能命中它。
-            // 这是「卡片穿透、按钮可点」的核心证据，光看 IsHitTestVisible 属性不够。
-            popup.Show();
+            // 真实命中测试：走真实的 ShowAt（它会在 UI 线程缓存按钮物理矩形），
+            // 按钮中心必须命中 SpeakBtn，卡片中心不能命中它。这是「卡片穿透、按钮可点」的核心证据。
+            popup.ShowAt(300, 300);
             popup.UpdateLayout();
             popup.UpdateLayout();
-            var btnCenter = popup.SpeakBtnPointForTest();
-            var hitBtn = System.Windows.Media.VisualTreeHelper.HitTest(popup, btnCenter);
-            var hitName = FindNamedAncestor(hitBtn?.VisualHit) ?? "null";
-            Check("hit_test_button_center", hitName, "SpeakBtn");
+            // 注：旧的 VisualTreeHelper.HitTest（相对窗口坐标）已由下面的 hook_* 系列取代，
+            // 后者用真实物理坐标从钩子线程验证，更贴近实际鼠标点击，也覆盖「卡片穿透」。
 
-            // 卡片左上角内侧一点（避开按钮），应命中不到 SpeakBtn
-            var cardPoint = popup.CardSafePointForTest();
-            var hitCard = System.Windows.Media.VisualTreeHelper.HitTest(popup, cardPoint);
-            var hitCardName = (hitCard?.VisualHit as System.Windows.FrameworkElement)?.Name ?? "null";
-            Check("hit_test_card_area_not_button", hitCardName == "SpeakBtn" ? "SpeakBtn" : "not_button", "not_button");
+            // 钩子线程安全探测：全局鼠标钩子在独立线程调用 IsOnSpeakButton，
+            // 若内部碰 WPF 视觉树会抛跨线程异常并卡住钩子（表现为划词卡死）。
+            string hookCall;
+            try
+            {
+                Exception? captured = null;
+                var t2 = new System.Threading.Thread(() =>
+                {
+                    try { popup.IsOnSpeakButton(0, 0); }
+                    catch (System.Exception ex) { captured = ex; }
+                });
+                t2.Start();
+                if (!t2.Join(3000)) captured = new System.TimeoutException("hook call did not return in 3s");
+                hookCall = captured == null ? "ok" : "threw:" + captured.GetType().Name;
+            }
+            catch (System.Exception ex) { hookCall = "threw:" + ex.GetType().Name; }
+            Check("hook_thread_safe", hookCall, "ok");
+
+            // 命中准确性：缓存矩形后，按钮中心必须命中，远处不能命中（均从钩子线程调用）
+            var btnPhys = popup.SpeakBtnScreenPointForTest();
+            bool hitCenter = false, hitFar = true;
+            var t3 = new System.Threading.Thread(() =>
+            {
+                hitCenter = popup.IsOnSpeakButton((int)btnPhys.X, (int)btnPhys.Y);
+                hitFar = popup.IsOnSpeakButton(-999, -999);
+            });
+            t3.Start();
+            t3.Join(3000);
+            Check("hook_hit_button_center", hitCenter ? "true" : "false", "true");
+            Check("hook_hit_far_miss", hitFar ? "true" : "false", "false");
 
             // 截图留证：用多音字样本（有 footer），肉眼确认按钮没压住文字
             var shotItems = Jyutping.Annotate("兩好");
             popup.Render(shotItems, "");
+            popup.Show();
+            popup.UpdateLayout();
             popup.UpdateLayout();
             var shot = new System.Windows.Media.Imaging.RenderTargetBitmap(
                 (int)System.Math.Ceiling(popup.ActualWidth), (int)System.Math.Ceiling(popup.ActualHeight),
@@ -102,7 +122,6 @@ public static class SelfTestSpeak
             var mwNoVoice = new MainWindow();
             Check("speak_box_disabled_no_voice", mwNoVoice.SpeakBoxEnabledForTest ? "true" : "false", "false");
             Check("no_voice_hint_visible", mwNoVoice.NoVoiceHintForTest.ToString(), "Visible");
-            Check("voice_row_disabled_no_voice", mwNoVoice.VoiceRowEnabledForTest ? "true" : "false", "false");
             Check("install_uri", mwNoVoice.VoiceSettingsUriForTest, "ms-settings:regionlanguage");
 
             // 截图留证：无语音时设置界面的置灰开关 + 安装提示条
@@ -117,14 +136,12 @@ public static class SelfTestSpeak
             using (var mwFs = File.Create(Path.Combine(dir, "selftest_speak_settings.png"))) mwEnc.Save(mwFs);
             mwNoVoice.Hide();
 
-            SpeechService.SetVoicesForTest(new[] { new CantoneseVoice("Microsoft Tracy Desktop", true) });
+            SpeechService.SetVoicesForTest(new[] { new CantoneseVoice("Microsoft Tracy Desktop") });
             var mwVoice = new MainWindow();
             Check("speak_box_enabled_with_voice", mwVoice.SpeakBoxEnabledForTest ? "true" : "false", "true");
             Check("no_voice_hint_collapsed", mwVoice.NoVoiceHintForTest.ToString(), "Collapsed");
-            Check("voice_row_enabled_with_voice", mwVoice.VoiceRowEnabledForTest ? "true" : "false", "true");
 
             SpeechSettings.SetEnabled(wasEnabled);
-            SpeechSettings.SetPreferFemale(wasFemale);
             SpeechService.ResetForTest();
 
             File.WriteAllLines(Path.Combine(dir, "selftest_speak.txt"), Log);

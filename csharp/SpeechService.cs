@@ -2,8 +2,8 @@ using System.Speech.Synthesis;
 
 namespace JyutPingPopup;
 
-/// <summary>本机粤语语音（SAPI5）：Tracy 女声 / Danny 男声。</summary>
-public sealed record CantoneseVoice(string Name, bool IsFemale);
+/// <summary>本机粤语语音（SAPI5，culture 为 zh-HK）。</summary>
+public sealed record CantoneseVoice(string Name);
 
 /// <summary>
 /// 本地 TTS：枚举系统粤语语音、懒加载 SpeechSynthesizer、按需朗读。
@@ -30,9 +30,7 @@ public static class SpeechService
                 var culture = info.Culture?.Name ?? "";
                 if (!culture.StartsWith("zh-HK", StringComparison.OrdinalIgnoreCase)) continue;
                 var name = info.Name ?? "";
-                var female = name.Contains("Tracy", StringComparison.OrdinalIgnoreCase)
-                             || info.Gender == VoiceGender.Female;
-                list.Add(new CantoneseVoice(name, female));
+                list.Add(new CantoneseVoice(name));
             }
             _voices = list;
         }
@@ -42,20 +40,19 @@ public static class SpeechService
 
     public static bool HasVoice => GetVoices().Count > 0;
 
-    /// <summary>按偏好选声音：优先请求的性别，没有则退回任意一台粤语语音。</summary>
-    private static CantoneseVoice? Pick(bool preferFemale)
+    /// <summary>不区分性别，直接用本机第一台可用的粤语语音。</summary>
+    private static CantoneseVoice? PickAuto()
     {
         var voices = GetVoices();
-        if (voices.Count == 0) return null;
-        return voices.FirstOrDefault(v => v.IsFemale == preferFemale) ?? voices[0];
+        return voices.Count == 0 ? null : voices[0];
     }
 
-    /// <summary>朗读中文原文。text 应是汉字串（非粤拼），让 zh-HK 语音按粤语读音处理。</summary>
-    /// <returns>是否成功发起朗读（无语音/无文本/异常时返回 false）。</returns>
-    public static bool Speak(string text, bool preferFemale)
+    /// <summary>朗读中文原文，自动选用本机已有的粤语语音（无选择项）。</summary>
+    public static bool Speak(string text) => SpeakWith(text, PickAuto());
+
+    private static bool SpeakWith(string text, CantoneseVoice? voice)
     {
         if (string.IsNullOrWhiteSpace(text)) return false;
-        var voice = Pick(preferFemale);
         if (voice == null) return false;
         try
         {
@@ -74,5 +71,5 @@ public static class SpeechService
     // 自测观察口：允许注入语音列表，验证选声逻辑不依赖本机是否装了粤语包
     internal static void SetVoicesForTest(IReadOnlyList<CantoneseVoice>? voices) => _voices = voices;
     internal static void ResetForTest() { lock (Gate) { _synth?.Dispose(); _synth = null; } _voices = null; }
-    internal static CantoneseVoice? PickForTest(bool preferFemale) => Pick(preferFemale);
+    internal static CantoneseVoice? PickAutoForTest() => PickAuto();
 }
