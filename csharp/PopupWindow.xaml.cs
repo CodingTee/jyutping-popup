@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 using System.Windows.Forms; // Screen：取选区所在屏幕的工作区做夹取
@@ -9,6 +10,9 @@ namespace JyutPingPopup;
 /// <summary>置顶小卡片：每个字上面汉字、下面粤拼，底部列出多音字。</summary>
 public partial class PopupWindow : Window
 {
+    private string _speakText = "";      // 本次要朗读的原文汉字（非粤拼）
+    private bool _speakBtnVisible;       // 发音按钮当前是否可见，供点击命中判断用
+
     public PopupWindow()
     {
         InitializeComponent();
@@ -60,15 +64,48 @@ public partial class PopupWindow : Window
         if (note.Length > 0) lines.Add(note);
         Footer.Text = string.Join("   ", lines);
         Footer.Visibility = lines.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+        // 发音按钮：仅在「设置开启 + 本机有粤语语音」时出现；无语音就完全不显示，自动降级
+        _speakText = string.Concat(items.Select(i => i.Char));
+        _speakBtnVisible = SpeechSettings.GetEnabled() && SpeechService.HasVoice;
+        var vis = _speakBtnVisible ? Visibility.Visible : Visibility.Collapsed;
+        SpeakBtn.Visibility = vis;
+        SpeakSpacer.Visibility = vis;
+    }
+
+    private void SpeakBtn_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true; // 吃掉这次按下，不让全局左键逻辑把它当成划词
+        SpeechService.Speak(_speakText, SpeechSettings.GetPreferFemale());
+    }
+
+    /// <summary>物理像素坐标是否落在发音按钮矩形内。全局钩子用它判断「这一下是不是点在按钮上」。</summary>
+    public bool IsOnSpeakButton(int pixelX, int pixelY)
+    {
+        if (!_speakBtnVisible || SpeakBtn.Visibility != Visibility.Visible) return false;
+        var transform = PresentationSource.FromVisual(this)?.CompositionTarget?.TransformFromDevice
+                        ?? Matrix.Identity;
+        var pt = transform.Transform(new System.Windows.Point(pixelX, pixelY));
+        var tl = SpeakBtn.PointToScreen(new System.Windows.Point(0, 0));
+        var rect = new System.Windows.Rect(tl.X, tl.Y, SpeakBtn.ActualWidth, SpeakBtn.ActualHeight);
+        return rect.Contains(pt);
     }
 
     // 自测观察口
     internal string FooterTextForTest => Footer.Text;
     internal Visibility FooterVisibilityForTest => Footer.Visibility;
     internal double FooterActualHeightForTest => Footer.ActualHeight;
+    internal Visibility SpeakBtnVisibilityForTest => SpeakBtn.Visibility;
+    internal string SpeakTextForTest => _speakText;
+    internal bool CardHitTestForTest => Card.IsHitTestVisible;
+    internal bool SpeakBtnHitTestForTest => SpeakBtn.IsHitTestVisible;
+    internal System.Windows.Point SpeakBtnPointForTest() =>
+        SpeakBtn.TranslatePoint(new System.Windows.Point(SpeakBtn.ActualWidth / 2, SpeakBtn.ActualHeight / 2), this);
+    internal System.Windows.Point CardSafePointForTest() =>
+        Card.TranslatePoint(new System.Windows.Point(8, 8), this);
     internal string MeasureProbe()
     {
-        var border = (System.Windows.Controls.Border)Content;
+        var border = Card;
         return $"borderValid={border.IsMeasureValid} " +
                $"borderDesired={border.DesiredSize.Width:F1}x{border.DesiredSize.Height:F1} " +
                $"footerVis={Footer.Visibility} footerDesired={Footer.DesiredSize.Width:F1}x{Footer.DesiredSize.Height:F1} " +

@@ -36,6 +36,11 @@ public partial class MainWindow : Window
         AutoStartBox.IsChecked = GetAutoStart();
         ClipFallbackBox.IsChecked = GetClipFallback();
         CaptureService.AllowClipFallback = GetClipFallback();   // 启动时同步给取词服务
+        var speakOn = SpeechSettings.GetEnabled();
+        SpeakBox.IsChecked = speakOn;
+        SpeakVoiceRow.IsEnabled = speakOn;
+        if (SpeechSettings.GetPreferFemale()) VoiceFemale.IsChecked = true;
+        else VoiceMale.IsChecked = true;
         Closing += MainWindow_Closing;
     }
 
@@ -194,6 +199,21 @@ public partial class MainWindow : Window
         ClipFallbackBox.IsChecked = GetClipFallback();
         CaptureService.AllowClipFallback = GetClipFallback();   // 立即生效，不用重启
         _suppress = false;
+    }
+
+    private void SpeakBox_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_suppress) return;
+        _suppress = true;
+        SpeechSettings.SetEnabled(SpeakBox.IsChecked == true);
+        SpeakVoiceRow.IsEnabled = SpeakBox.IsChecked == true;
+        _suppress = false;
+    }
+
+    private void Voice_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_suppress) return;
+        SpeechSettings.SetPreferFemale(VoiceFemale.IsChecked == true);
     }
 
     private void OffBtn_Click(object sender, RoutedEventArgs e) => RequestExit();

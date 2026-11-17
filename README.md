@@ -45,6 +45,7 @@ The demo GIFs come from `assets/Video/make_gif.bat`. Drag a local recording onto
 - **自定义热键**：三个热键均可改，也可一键恢复默认：退出 `Ctrl + Shift + Q`、暂停 `Ctrl + Shift + P`、截图识字 `Ctrl + Shift + L`。
 - **多音字与词优先**：先按词查表（如「重量」读 `cung5 loeng6`），查不到再回退到单字，避免把词劈开读错。
 - **简繁转换**：注音前自动把简体转成香港繁体，字形与粤拼表一致。
+- **发音（可选，默认关闭）**：在设置里开启后，卡片右下角出现「朗读」按钮，点一下即用本机粤语语音（Tracy 女声 / Danny 男声）念出选中的字；按钮不拦截鼠标，卡片其余区域照常穿透。未安装粤语语音时按钮自动隐藏，不影响其它功能，全程离线。
 - **单实例**：重复启动只会唤醒已运行的实例，不会开多个。
 - **托盘常驻**：右键托盘图标可显示主界面、暂停/继续捕获、截图识字或退出；可设开机自启。
 
@@ -53,6 +54,7 @@ The demo GIFs come from `assets/Video/make_gif.bat`. Drag a local recording onto
 - **Customizable hotkeys:** All three hotkeys can be changed or reset to defaults: quit `Ctrl + Shift + Q`, pause `Ctrl + Shift + P`, screenshot OCR `Ctrl + Shift + L`.
 - **Words before characters:** Multi-character words are looked up first (for example 「重量」 reads `cung5 loeng6`), falling back to single characters only when needed, so words are not split incorrectly.
 - **Simplified to Traditional:** Text is converted to Hong Kong Traditional before annotation, matching the shapes in the Jyutping tables.
+- **Pronunciation (optional, off by default):** Enable it in settings and a "朗读" button appears on the card. Click to read the selected text aloud with a local Cantonese voice (Tracy female / Danny male). The button does not block mouse clicks and the rest of the card stays click-through. With no Cantonese voice installed the button hides itself and everything else keeps working. Fully offline.
 - **Single instance:** Launching again only wakes the running instance instead of opening another.
 - **System tray:** Right click the tray icon to show the main window, pause or resume capture, trigger screenshot OCR, or quit. Optional launch on startup.
 
@@ -62,9 +64,11 @@ The demo GIFs come from `assets/Video/make_gif.bat`. Drag a local recording onto
 
 - Windows 10 / 11（系统版本 22621 或更高，OCR 需要此版本以上的 WinRT 接口）
 - .NET 9 运行时（若用自包含发布则不需要）
+- 可选的粤语语音包：仅发音功能需要。到「设置 → 时间和语言 → 语言和区域 → 添加语言 → 中文（繁体，香港）」，在语言选项里勾选「文字转换语音」，装完重启软件。语音属 Windows 组件，不随本软件分发；没装则发音按钮不显示，其余功能不受影响。
 
 - Windows 10 / 11 (OS build 22621 or later, required by the WinRT OCR APIs)
 - .NET 9 runtime (not needed for a self contained publish)
+- Optional Cantonese voice pack: needed only for pronunciation. Go to Settings → Time & language → Language & region → Add a language → Chinese (Traditional, Hong Kong), then check "Text to speech" in the language options and restart the app. Voices are a Windows component and are not bundled with this app; without one the pronunciation button stays hidden and everything else works.
 
 ### 安装 / Install
 
@@ -99,6 +103,7 @@ The core is a Windows desktop app. The roles of each part are summarized below.
 - **C# / WPF / .NET 9** (`net9.0-windows10.0.22621.0`): 渲染浮窗、设置窗口与截图遮罩的桌面 UI 框架。
 - **WinRT `Windows.Media.Ocr`**: 离线、设备端的中文（`zh-Hans`）文字识别，不联网。
 - **FlaUI.UIA3 5.0.0**: UI Automation 库，用于从大多数程序读取当前选区文字，无需碰剪贴板。
+- **System.Speech 9.0.0**: Windows SAPI5 本地语音合成，用于可选的粤语朗读，不联网。
 - **低层 Win32 钩子**: 全局鼠标与键盘钩子，用于选区检测与可自定义热键。
 - **Rime 粤拼词典** (`data/chars.dict.yaml`, `data/words.dict.yaml`): 驱动汉字到粤拼的映射，先词后字。
 - **OpenCC** (`data/opencc`): 注音前把简体转成香港繁体。
@@ -108,6 +113,7 @@ The core is a Windows desktop app. The roles of each part are summarized below.
 - **C# / WPF / .NET 9** (`net9.0-windows10.0.22621.0`): Desktop UI framework that renders the floating popup, settings window, and screenshot overlay.
 - **WinRT `Windows.Media.Ocr`**: Offline, on device Chinese (`zh-Hans`) text recognition with no network.
 - **FlaUI.UIA3 5.0.0**: UI Automation library used to read the current selection from most apps without touching the clipboard.
+- **System.Speech 9.0.0**: Windows SAPI5 local speech synthesis for the optional Cantonese pronunciation, no network.
 - **Low level Win32 hooks**: Global mouse and keyboard hooks for selection detection and customizable hotkeys.
 - **Rime Jyutping dictionaries** (`data/chars.dict.yaml`, `data/words.dict.yaml`): Drive the character to Jyutping mapping, words before characters.
 - **OpenCC** (`data/opencc`): Converts Simplified Chinese to Hong Kong Traditional before annotation.
@@ -127,7 +133,7 @@ The output is `csharp/publish/JyutPingPopup.exe`. For the installer, open `insta
 
 ## 自测 / Self-tests
 
-仓库内置多套命令行自测，覆盖注音、剪贴板兜底、含图剪贴板持锁、卡片布局、OCR、截图遮罩与结果面板。其中 `--selftest-region` 和 `--selftest-ocrpanel` 会短暂弹出真实窗口，其余均为纯命令行：
+仓库内置多套命令行自测，覆盖注音、剪贴板兜底、含图剪贴板持锁、卡片布局、OCR、截图遮罩、结果面板与发音（含命中穿透）。其中 `--selftest-region`、`--selftest-ocrpanel` 和 `--selftest-speak` 会短暂弹出真实窗口，其余均为纯命令行：
 
 ```bash
 JyutPingPopup.exe --selftest            # 注音对基线（20 样本）
@@ -139,9 +145,10 @@ JyutPingPopup.exe --selftest-ui         # 卡片渲染
 JyutPingPopup.exe --selftest-ocr        # 离线 OCR 识别
 JyutPingPopup.exe --selftest-region     # 截图遮罩渲染与坐标
 JyutPingPopup.exe --selftest-ocrpanel   # OCR 结果面板渲染
+JyutPingPopup.exe --selftest-speak      # 发音：选声/开关/按钮显隐/命中穿透
 ```
 
-The repo ships several command line self tests covering annotation, clipboard fallback, image clipboard lock timing, card layout, OCR, the screenshot overlay, and the result panel. `--selftest-region` and `--selftest-ocrpanel` briefly open real windows; the rest are pure command line:
+The repo ships several command line self tests covering annotation, clipboard fallback, image clipboard lock timing, card layout, OCR, the screenshot overlay, the result panel, and pronunciation (including hit-test click-through). `--selftest-region`, `--selftest-ocrpanel`, and `--selftest-speak` briefly open real windows; the rest are pure command line:
 
 ```bash
 JyutPingPopup.exe --selftest            # annotation against baseline (20 samples)
@@ -153,6 +160,7 @@ JyutPingPopup.exe --selftest-ui         # card rendering
 JyutPingPopup.exe --selftest-ocr        # offline OCR recognition
 JyutPingPopup.exe --selftest-region     # screenshot overlay rendering and coordinates
 JyutPingPopup.exe --selftest-ocrpanel   # OCR result panel rendering
+JyutPingPopup.exe --selftest-speak      # pronunciation: voice pick, toggle, button visibility, hit test
 ```
 
 ## 文件结构 / Project layout

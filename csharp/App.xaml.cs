@@ -98,6 +98,12 @@ public partial class App : System.Windows.Application
             return;
         }
 
+        if (e.Args.Length > 0 && e.Args[0] == "--selftest-speak")
+        {
+            SelfTestSpeak.Run();
+            return;
+        }
+
         _mutex = new Mutex(true, MutexName, out var createdNew);
         if (!createdNew)
         {
@@ -373,7 +379,10 @@ public partial class App : System.Windows.Application
 
     private void OnLeftButtonUp(int x, int y)
     {
-        // 点任何地方都收起弹窗，但不取词
+        // 点在发音按钮上：让按钮自己处理朗读，不收起弹窗（钩子回调先于 WPF 的按钮事件，
+        // 这里若照常 Dismiss，弹窗会在按钮响应前就被隐藏）。
+        if (_popup?.IsOnSpeakButton(x, y) == true) return;
+        // 点其它任何地方都收起弹窗，但不取词
         DismissPopup();
     }
 
