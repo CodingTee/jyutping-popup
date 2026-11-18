@@ -104,6 +104,12 @@ public partial class App : System.Windows.Application
             return;
         }
 
+        if (e.Args.Length > 0 && e.Args[0] == "--selftest-perf")
+        {
+            SelfTestPerf.Run();
+            return;
+        }
+
         _mutex = new Mutex(true, MutexName, out var createdNew);
         if (!createdNew)
         {

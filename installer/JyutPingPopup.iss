@@ -3,7 +3,7 @@
 ; 路径均相对本 .iss 所在目录, clone 后可直接在任意机器上编译
 
 #define MyAppName "粤语拼音弹窗"
-#define MyAppVersion "1.0"
+#define MyAppVersion "1.0.0"
 #define MyExe "JyutPingPopup.exe"
 #define PublishDir "..\csharp\publish"
 

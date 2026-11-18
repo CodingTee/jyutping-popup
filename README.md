@@ -72,9 +72,9 @@ The demo GIFs come from `assets/Video/make_gif.bat`. Drag a local recording onto
 
 ### 安装 / Install
 
-从 Release 下载安装包，或用 Inno Setup 打开 `installer/JyutPingPopup.iss` 按 `F9` 编译出 `setup.exe` 安装。也可直接运行从源码发布的单文件 `JyutPingPopup.exe`。
+从 [Releases](https://github.com/CodingTee/jyutping-popup/releases) 下载 `JyutPingPopup-Setup.exe` 安装，安装程序会先检测 .NET 9 桌面运行时。也可自行编译：用 Inno Setup 打开 `installer/JyutPingPopup.iss` 按 `F9`；或直接运行 `csharp/publish/JyutPingPopup.exe`，注意整个 `publish` 目录要一起拷贝（原因见下文构建说明）。
 
-Download the installer from Release, or open `installer/JyutPingPopup.iss` in Inno Setup and press `F9` to compile `setup.exe`. You can also run the single file `JyutPingPopup.exe` published from source.
+Download `JyutPingPopup-Setup.exe` from [Releases](https://github.com/CodingTee/jyutping-popup/releases); the installer checks for the .NET 9 desktop runtime first. To build it yourself, open `installer/JyutPingPopup.iss` in Inno Setup and press `F9`. You can also run `csharp/publish/JyutPingPopup.exe` directly, keeping the whole `publish` folder together (see the build section).
 
 ### 日常使用 / Daily use
 
@@ -123,17 +123,16 @@ The core is a Windows desktop app. The roles of each part are summarized below.
 ## 从源码构建 / Build from source
 
 ```bash
-cd csharp
-dotnet publish -c Release -p:PublishSingleFile=true --self-contained false -r win-x64 -o publish
+dotnet publish csharp -c Release -o csharp/publish
 ```
 
-构建产物在 `csharp/publish/JyutPingPopup.exe`。安装包用 Inno Setup 打开 `installer/JyutPingPopup.iss` 按 `F9` 编译（机器上通常没有命令行 `iscc`）。
+构建产物是 `csharp/publish/` 整个目录：`JyutPingPopup.exe` 加上同目录的 dll、`*.runtimeconfig.json` 与 `runtimes/`。**这些文件必须放在一起**，`System.Speech` 位于 `runtimes/win/lib/net9.0/`，只拷 exe 会在启动时报找不到程序集。安装包用 Inno Setup 打开 `installer/JyutPingPopup.iss` 按 `F9` 编译（机器上通常没有命令行 `iscc`）。
 
-The output is `csharp/publish/JyutPingPopup.exe`. For the installer, open `installer/JyutPingPopup.iss` in Inno Setup and press `F9` (the command line `iscc` is usually not installed).
+The build output is the whole `csharp/publish/` folder: `JyutPingPopup.exe` plus the dlls, `*.runtimeconfig.json`, and `runtimes/` beside it. **Keep them together**: `System.Speech` sits in `runtimes/win/lib/net9.0/`, so copying the exe alone fails at startup with a missing assembly. For the installer, open `installer/JyutPingPopup.iss` in Inno Setup and press `F9` (`iscc` is usually not installed).
 
 ## 自测 / Self-tests
 
-仓库内置多套命令行自测，覆盖注音、剪贴板兜底、含图剪贴板持锁、卡片布局、OCR、截图遮罩、结果面板与发音（含命中穿透）。其中 `--selftest-region`、`--selftest-ocrpanel` 和 `--selftest-speak` 会短暂弹出真实窗口，其余均为纯命令行：
+仓库内置多套命令行自测，覆盖注音、剪贴板兜底、含图剪贴板持锁、卡片布局、OCR、截图遮罩、结果面板、发音（含命中穿透）与连续弹窗性能。其中 `--selftest-region`、`--selftest-ocrpanel`、`--selftest-speak` 和 `--selftest-perf` 会短暂弹出真实窗口，其余均为纯命令行：
 
 ```bash
 JyutPingPopup.exe --selftest            # 注音对基线（20 样本）
@@ -146,9 +145,10 @@ JyutPingPopup.exe --selftest-ocr        # 离线 OCR 识别
 JyutPingPopup.exe --selftest-region     # 截图遮罩渲染与坐标
 JyutPingPopup.exe --selftest-ocrpanel   # OCR 结果面板渲染
 JyutPingPopup.exe --selftest-speak      # 发音：自动选声/开关/按钮显隐/钩子线程安全命中
+JyutPingPopup.exe --selftest-perf       # 连续弹窗性能：Hide -> Render -> ShowAt 逐次计时，确认无累积
 ```
 
-The repo ships several command line self tests covering annotation, clipboard fallback, image clipboard lock timing, card layout, OCR, the screenshot overlay, the result panel, and pronunciation (including hit-test click-through). `--selftest-region`, `--selftest-ocrpanel`, and `--selftest-speak` briefly open real windows; the rest are pure command line:
+The repo ships several command line self tests covering annotation, clipboard fallback, image clipboard lock timing, card layout, OCR, the screenshot overlay, the result panel, pronunciation (including hit-test click-through), and repeated popup performance. `--selftest-region`, `--selftest-ocrpanel`, `--selftest-speak`, and `--selftest-perf` briefly open real windows; the rest are pure command line:
 
 ```bash
 JyutPingPopup.exe --selftest            # annotation against baseline (20 samples)
@@ -161,6 +161,7 @@ JyutPingPopup.exe --selftest-ocr        # offline OCR recognition
 JyutPingPopup.exe --selftest-region     # screenshot overlay rendering and coordinates
 JyutPingPopup.exe --selftest-ocrpanel   # OCR result panel rendering
 JyutPingPopup.exe --selftest-speak      # pronunciation: auto voice pick, toggle, button visibility, hook-safe hit test
+JyutPingPopup.exe --selftest-perf       # repeated popup timing: Hide -> Render -> ShowAt, checking for accumulation
 ```
 
 ## 文件结构 / Project layout
