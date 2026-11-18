@@ -13,6 +13,13 @@ internal static class SelfTestClipImage
     {
         var lines = new List<string>();
         var original = ClipboardBackup.Take();
+        if (original == null)
+        {
+            lines.Add("skipped: clipboard busy, user data untouched");
+            File.WriteAllLines(Path.Combine(AppContext.BaseDirectory, "selftest_clipimage.txt"), lines);
+            System.Windows.Application.Current.Shutdown();
+            return;
+        }
         try
         {
             foreach (var (w, h) in new[] { (640, 480), (1920, 1080) })
@@ -33,7 +40,7 @@ internal static class SelfTestClipImage
         }
         finally
         {
-            original?.Restore();
+            original.Restore();
         }
         File.WriteAllLines(Path.Combine(AppContext.BaseDirectory, "selftest_clipimage.txt"), lines);
         System.Windows.Application.Current.Shutdown();

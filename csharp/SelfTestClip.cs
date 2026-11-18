@@ -18,11 +18,18 @@ public static class SelfTestClip
 
         var backup = ClipboardBackup.Take();
         log.Add("backup\t" + (backup != null ? "ok" : "FAILED (clipboard locked)"));
+        if (backup == null)
+        {
+            log.Add("skipped\tclipboard busy, user data untouched");
+            File.WriteAllLines(Path.Combine(AppContext.BaseDirectory, "selftest_clip.txt"), log);
+            System.Windows.Application.Current.Shutdown();
+            return;
+        }
 
         Native.WriteClipboard("剪贴板自测文本 ABC");
         log.Add("afterWrite\t" + ClipboardBackup.Describe());
 
-        backup?.Restore();
+        backup.Restore();
         var after = ClipboardBackup.Describe();
         log.Add("afterRestore\t" + after);
 

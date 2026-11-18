@@ -445,6 +445,8 @@ public partial class App : System.Windows.Application
         if (Dispatcher.HasShutdownStarted) return; // 退出途中不再往 UI 线程塞渲染任务
         Dispatcher.BeginInvoke(() =>
         {
+            // 入队后到 UI 真正执行前，用户可能又点了别处推进世代号；这里必须再查一次。
+            if (Interlocked.Read(ref _popupEpoch) != epoch) return;
             _popup?.Render(items, note);
             _popup?.ShowAt(x, y);
         });

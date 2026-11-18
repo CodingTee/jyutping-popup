@@ -272,6 +272,7 @@ public sealed class InputHooks : IDisposable
                         {
                             if (BareMatches(_quit, vk)) QuitRequested?.Invoke();
                             else if (BareMatches(_pause, vk)) PauseToggleRequested?.Invoke();
+                            else if (BareMatches(_ocr, vk)) OcrRequested?.Invoke();
                         }
                         if (_modDown == 0) _bareOtherPressed = false;
                     }

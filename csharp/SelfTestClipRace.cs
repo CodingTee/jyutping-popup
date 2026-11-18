@@ -13,6 +13,30 @@ public static class SelfTestClipRace
     {
         var log = new List<string>();
 
+        // 这些探针写入会覆盖用户正在用的剪贴板；先备份，测完原样还回去。
+        // 快照失败就整个跳过，绝不在没有还原能力时动剪贴板。
+        var userBackup = ClipboardBackup.Take();
+        if (userBackup == null)
+        {
+            log.Add("skipped\tclipboard busy, user data untouched");
+            File.WriteAllLines(Path.Combine(AppContext.BaseDirectory, "selftest_cliprace.txt"), log);
+            System.Windows.Application.Current.Shutdown();
+            return;
+        }
+        try
+        {
+            RunCore(log);
+            File.WriteAllLines(Path.Combine(AppContext.BaseDirectory, "selftest_cliprace.txt"), log);
+        }
+        finally
+        {
+            userBackup.Restore();
+            System.Windows.Application.Current.Shutdown();
+        }
+    }
+
+    private static void RunCore(List<string> log)
+    {
         // 关键标定：一次「标准写入」（Empty+Set）到底让剪贴板序号跳几格。
         // 若跳 2 格，就不能用 delta==1 判定「这次写入是我发的 Ctrl+C」，否则正常路径会被误判。
         var s0 = Native.GetClipboardSequenceNumber();
@@ -26,8 +50,6 @@ public static class SelfTestClipRace
             "S2-foreign-nontext-150ms\t" + Race("", 150),
             "S3-foreign-late-700ms\t" + Race("LATE_COPY", 700),
         });
-        File.WriteAllLines(Path.Combine(AppContext.BaseDirectory, "selftest_cliprace.txt"), log);
-        System.Windows.Application.Current.Shutdown();
     }
 
     private static string Race(string foreign, int delayMs)
