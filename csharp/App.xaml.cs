@@ -139,9 +139,18 @@ public partial class App : System.Windows.Application
         _hooks.SelectionMade += OnSelectionMade;     // 只有划选：才去取词
         _hooks.EscapePressed += () => DismissPopup();
         _hooks.DismissRequested += () => DismissPopup();   // Backspace / Delete / Enter
-        _hooks.QuitRequested += () => Dispatcher.BeginInvoke(new Action(RequestExit));
-        _hooks.PauseToggleRequested += () => Dispatcher.BeginInvoke(new Action(TogglePause));
-        _hooks.OcrRequested += () => Dispatcher.BeginInvoke(new Action(StartOcr));
+        _hooks.QuitRequested += () =>
+        {
+            if (!Dispatcher.HasShutdownStarted) Dispatcher.BeginInvoke(new Action(RequestExit));
+        };
+        _hooks.PauseToggleRequested += () =>
+        {
+            if (!Dispatcher.HasShutdownStarted) Dispatcher.BeginInvoke(new Action(TogglePause));
+        };
+        _hooks.OcrRequested += () =>
+        {
+            if (!Dispatcher.HasShutdownStarted) Dispatcher.BeginInvoke(new Action(StartOcr));
+        };
 
         // 从注册表恢复自定义热键（缺省 Ctrl+Shift+Q / Ctrl+Shift+P / Ctrl+Shift+L）
         _quitHotkey = LoadHotkey(HotkeyQuitValue, Hotkey.DefaultQuit());
@@ -150,7 +159,11 @@ public partial class App : System.Windows.Application
         _hooks.SetQuitHotkey(_quitHotkey);
         _hooks.SetPauseHotkey(_pauseHotkey);
         _hooks.SetOcrHotkey(_ocrHotkey);
-        _hooks.HotkeyCaptured += hk => Dispatcher.BeginInvoke(new Action(() => OnHotkeyCaptured(hk)));
+        _hooks.HotkeyCaptured += hk =>
+        {
+            if (!Dispatcher.HasShutdownStarted)
+                Dispatcher.BeginInvoke(new Action(() => OnHotkeyCaptured(hk)));
+        };
 
         _main = new MainWindow(); // 默认不 Show，仅在点击托盘时弹出
         _main.PauseToggleRequested += TogglePause;
