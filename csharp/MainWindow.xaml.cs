@@ -44,6 +44,10 @@ public partial class MainWindow : Window
         var hasVoice = SpeechService.HasVoice;                 // 没装粤语语音包就置灰开关、亮出安装提示
         SpeakBox.IsEnabled = hasVoice;
         SpeakBox.ToolTip = hasVoice ? null : "未检测到粤语语音包，点下方链接安装";
+        // 没有语音包时整栏（含文字）一起变灰，一眼看出这栏不可用；有语音时透明
+        SpeakBoxRow.Background = hasVoice
+            ? System.Windows.Media.Brushes.Transparent
+            : new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0xEE, 0xEE, 0xEE));
         SpeakNoVoiceHint.Visibility = hasVoice ? Visibility.Collapsed : Visibility.Visible;
         _suppress = false;
         Closing += MainWindow_Closing;
@@ -248,6 +252,7 @@ public partial class MainWindow : Window
 
     // 自测观察口：验证无语音时开关置灰、安装提示显隐、跳转目标
     internal bool SpeakBoxEnabledForTest => SpeakBox.IsEnabled;
+    internal string SpeakRowBgForTest => (SpeakBoxRow.Background as System.Windows.Media.SolidColorBrush)?.Color.ToString() ?? "null";
     internal Visibility NoVoiceHintForTest => SpeakNoVoiceHint.Visibility;
     internal string VoiceSettingsUriForTest => VoiceSettingsUri;
 }
