@@ -80,11 +80,9 @@
                     <CheckBox x:Name="AutoStartBox" Content="开机自启"
                               ToolTipService.ToolTip="开机自动启动"
                               Checked="AutoStartBox_Changed" Unchecked="AutoStartBox_Changed"/>
-                    <Border x:Name="SpeakBoxRow" CornerRadius="3" Padding="3,4,3,4" Margin="0,3,0,0">
-                        <CheckBox x:Name="SpeakBox" Content="发音按钮（默认关闭）"
-                                  ToolTipService.ToolTip="在粤拼卡片上显示「朗读」按钮"
-                                  Checked="SpeakBox_Changed" Unchecked="SpeakBox_Changed"/>
-                    </Border>
+                    <CheckBox x:Name="SpeakBox" Content="发音按钮（默认关闭）" Margin="0,7,0,0"
+                              ToolTipService.ToolTip="在粤拼卡片上显示「朗读」按钮"
+                              Checked="SpeakBox_Changed" Unchecked="SpeakBox_Changed"/>
                 </StackPanel>
             </Grid>
 

@@ -121,7 +121,6 @@ public static class SelfTestSpeak
             SpeechService.SetVoicesForTest(System.Array.Empty<CantoneseVoice>());
             var mwNoVoice = new MainWindow();
             Check("speak_box_disabled_no_voice", mwNoVoice.SpeakBoxEnabledForTest ? "true" : "false", "false");
-            Check("speak_row_gray_no_voice", mwNoVoice.SpeakRowBgForTest, "#FFEEEEEE");
             Check("no_voice_hint_visible", mwNoVoice.NoVoiceHintForTest.ToString(), "Visible");
             Check("install_uri", mwNoVoice.VoiceSettingsUriForTest, "ms-settings:regionlanguage");
 
@@ -140,7 +139,6 @@ public static class SelfTestSpeak
             SpeechService.SetVoicesForTest(new[] { new CantoneseVoice("Microsoft Tracy Desktop") });
             var mwVoice = new MainWindow();
             Check("speak_box_enabled_with_voice", mwVoice.SpeakBoxEnabledForTest ? "true" : "false", "true");
-            Check("speak_row_transparent_with_voice", mwVoice.SpeakRowBgForTest, "#00FFFFFF");
             Check("no_voice_hint_collapsed", mwVoice.NoVoiceHintForTest.ToString(), "Collapsed");
 
             SpeechSettings.SetEnabled(wasEnabled);
