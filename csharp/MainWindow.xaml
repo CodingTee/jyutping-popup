@@ -82,7 +82,17 @@
                               Checked="AutoStartBox_Changed" Unchecked="AutoStartBox_Changed"/>
                     <CheckBox x:Name="SpeakBox" Content="发音按钮（默认关闭）" Margin="0,7,0,0"
                               ToolTipService.ToolTip="在粤拼卡片上显示「朗读」按钮"
-                              Checked="SpeakBox_Changed" Unchecked="SpeakBox_Changed"/>
+                              Checked="SpeakBox_Changed" Unchecked="SpeakBox_Changed">
+                        <CheckBox.Style>
+                            <Style TargetType="CheckBox">
+                                <Style.Triggers>
+                                    <Trigger Property="IsEnabled" Value="False">
+                                        <Setter Property="Opacity" Value="0.4"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </CheckBox.Style>
+                    </CheckBox>
                 </StackPanel>
             </Grid>
 

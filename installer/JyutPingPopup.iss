@@ -31,6 +31,9 @@ Name: "chinese"; MessagesFile: "compiler:Languages\ChineseSimplified.isl"
 
 [Files]
 Source: "{#PublishDir}\{#MyExe}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#PublishDir}\*.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#PublishDir}\*.json"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#PublishDir}\runtimes\*"; DestDir: "{app}\runtimes"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#PublishDir}\data\*"; DestDir: "{app}\data"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
