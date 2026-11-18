@@ -310,4 +310,35 @@ internal static partial class Native
         // KF_REPEAT = 0x40000000：该位为 1 表示这次是系统自动重复，不是首次按下
         return (Marshal.PtrToStructure<KeyboardHookStruct>(lParam).Flags & 0x40000000u) != 0;
     }
+
+    // ---- 弹窗定位：全程用物理像素，绕开 WPF 在多屏混 DPI 下 Left/Top 的标度歧义 ----
+    internal struct Rect { public int Left, Top, Right, Bottom; }
+
+    internal const uint SwpNoSize = 0x0001;
+    internal const uint SwpNoZOrder = 0x0004;
+    internal const uint SwpNoActivate = 0x0010;
+
+    [LibraryImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static partial bool GetWindowRect(IntPtr hWnd, out Rect rect);
+
+    [LibraryImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static partial bool SetWindowPos(IntPtr hWnd, IntPtr after, int x, int y, int cx, int cy, uint flags);
+
+    [LibraryImport("user32.dll")]
+    internal static partial IntPtr MonitorFromPoint(Point pt, uint flags);
+
+    [LibraryImport("shcore.dll")]
+    internal static partial int GetDpiForMonitor(IntPtr monitor, int dpiType, out uint dpiX, out uint dpiY);
+
+    /// <summary>选区所在显示器的有效 DPI 缩放（96 = 1.0）。</summary>
+    internal static double EffectiveScaleAt(int x, int y)
+    {
+        var monitor = MonitorFromPoint(new Point { X = x, Y = y }, 2); // MONITOR_DEFAULTTONEAREST
+        if (monitor == IntPtr.Zero) return 1.0;
+        return GetDpiForMonitor(monitor, 0, out var dpiX, out _) == 0 && dpiX > 0
+            ? dpiX / 96.0
+            : 1.0;
+    }
 }

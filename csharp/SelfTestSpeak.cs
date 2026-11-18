@@ -14,6 +14,27 @@ public static class SelfTestSpeak
     {
         var dir = AppContext.BaseDirectory;
 
+        // 弹窗落点：用纯计算验证不同 DPI 缩放与工作区夹取，单显示器机器也能测多屏算法
+        var wa1 = new System.Drawing.Rectangle(0, 0, 1920, 1080);
+        var p1 = PopupWindow.ComputePlacement(300, 300, 200, 100, wa1, 1.0);
+        Check("placement_scale_1", $"{p1.Left},{p1.Top}", "316,320");
+        var wa2 = new System.Drawing.Rectangle(1920, 0, 1280, 1024);
+        var p2 = PopupWindow.ComputePlacement(2000, 300, 200, 100, wa2, 1.5);
+        Check("placement_scale_1_5", $"{p2.Left},{p2.Top}", "2024,330");
+        var p3 = PopupWindow.ComputePlacement(3190, 1000, 200, 100, wa2, 1.5);
+        Check("placement_clamp", $"{p3.Left},{p3.Top}", "3000,924");
+
+        // 热键冲突：另两个重复要拦，改成自己的旧值不算冲突
+        var quit = new Hotkey { Ctrl = true, Shift = true, Key = 81, KeyName = "Q" };
+        var pause = new Hotkey { Ctrl = true, Shift = true, Key = 80, KeyName = "P" };
+        var ocr = new Hotkey { Ctrl = true, Shift = true, Key = 76, KeyName = "L" };
+        Check("hotkey_conflict_pause",
+            App.FindHotkeyConflict(pause, App.CaptureTarget.Quit, quit, pause, ocr) ?? "none", "暂停捕获");
+        Check("hotkey_conflict_ocr",
+            App.FindHotkeyConflict(ocr, App.CaptureTarget.Pause, quit, pause, ocr) ?? "none", "截图识字");
+        Check("hotkey_conflict_self_ok",
+            App.FindHotkeyConflict(quit, App.CaptureTarget.Quit, quit, pause, ocr) ?? "none", "none");
+
         // 1. 自动选声：不区分男女，固定用本机列表里的第一台粤语语音
         SpeechService.SetVoicesForTest(new[]
         {
@@ -41,6 +62,7 @@ public static class SelfTestSpeak
         dispatcher.BeginInvoke(new System.Action(() =>
         {
             var popup = new PopupWindow();
+            popup.Show(); // 生产路径在 App 启动时已 Show；这里也要有 HWND 才能测 PointToScreen
             var items = Jyutping.Annotate("你好");
 
             // 无语音 + 开关关：按钮必须隐藏

@@ -17,7 +17,7 @@ public partial class App : System.Windows.Application
     private const string HotkeyPauseValue = "HotkeyPause";
     private const string HotkeyOcrValue = "HotkeyOcr";
 
-    private enum CaptureTarget { Quit, Pause, Ocr }
+    internal enum CaptureTarget { Quit, Pause, Ocr }
 
     private static Mutex? _mutex;
     private static EventWaitHandle? _activateEvent;
@@ -274,6 +274,13 @@ public partial class App : System.Windows.Application
         _main?.SetCapturingPause(false);
         _main?.SetCapturingOcr(false);
         if (hk == null) return; // Esc 取消
+        var conflict = FindHotkeyConflict(hk, _captureTarget, _quitHotkey, _pauseHotkey, _ocrHotkey);
+        if (conflict != null)
+        {
+            System.Windows.MessageBox.Show($"这个热键已分配给「{conflict}」，请换一个。", "自定义热键",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return;
+        }
         if (_captureTarget == CaptureTarget.Quit)
         {
             _quitHotkey = hk;
@@ -295,6 +302,17 @@ public partial class App : System.Windows.Application
             _hooks?.SetOcrHotkey(hk);
             _main?.SetOcrHotkeyDisplay(hk.Format());
         }
+    }
+
+    /// <summary>新热键是否与另外两个冲突；自己的旧值不算冲突。返回被占用者的显示名。</summary>
+    internal static string? FindHotkeyConflict(Hotkey candidate, CaptureTarget target,
+        Hotkey quit, Hotkey pause, Hotkey ocr)
+    {
+        var key = candidate.ToCompact();
+        if (target != CaptureTarget.Quit && quit.ToCompact() == key) return "全局关闭";
+        if (target != CaptureTarget.Pause && pause.ToCompact() == key) return "暂停捕获";
+        if (target != CaptureTarget.Ocr && ocr.ToCompact() == key) return "截图识字";
+        return null;
     }
 
     // 「恢复默认热键」：把全局关闭 / 暂停 / 截图识字三个热键都重置成默认值并落盘
@@ -366,9 +384,17 @@ public partial class App : System.Windows.Application
                     panel.Show();
                 }));
             }
-            catch
+            catch (Exception ex)
             {
                 bmp.Dispose();
+                // 之前这里吞掉异常，遮罩一关什么都没有，用户以为热键没反应。
+                if (!Dispatcher.HasShutdownStarted)
+                {
+                    var detail = ex.Message;
+                    _ = Dispatcher.BeginInvoke(new Action(() =>
+                        System.Windows.MessageBox.Show($"截图识字失败：{detail}", "截图识字",
+                            System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning)));
+                }
             }
         };
         selector.Show();
